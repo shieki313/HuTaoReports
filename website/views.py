@@ -1,13 +1,20 @@
 from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
+from . import forms
 
 
-class IndexView(TemplateView):
+class IndexView(FormView):
+    form_class = forms.StatusForm
     template_name = "index.html"
     
-    def get_context_data(self):
+    def form_valid(self, form):
+        data = form.cleaned_data
+        testnum = 3
+        filenamec = "test.png"
         ctxt = super().get_context_data()
-        ctxt["username"] = "太郎"
-        return ctxt
+        ctxt["filenamec"] = filenamec
+        ctxt["testnum"] = testnum
+        return self.render_to_response(ctxt)
     
 
 class AboutView(TemplateView):

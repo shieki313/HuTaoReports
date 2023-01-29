@@ -1,15 +1,21 @@
 {% load static %}
-<!doctype HTML>
+<!DOCTYPE HTML>
+
 <html>
-    <head>
-        <link rel="stylesheet" href="{% static 'main.css' %}">
-    </head>
-    <body>
-        {% include "_navbar.html" %}
-        <div>
-            {% block main %}
-            {% endblock %}
-        </div>
-        {% include "_footer.html" %}
-    </body>
+<head>
+    <meta charset="utf-8">
+    <title>原神占い</title>
+    <link rel="stylesheet" href="{% static 'main.css' %}">
+</head>
+
+<body>
+    <div id="page">
+    {% include "_navbar.html" %}
+    {% block main %}
+    コンテンツがありません
+    {% endblock %}
+    {% include "_footer.html" %}
+    </div>
+</body>
+
 </html>

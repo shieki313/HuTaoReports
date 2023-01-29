@@ -1,13 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block main %}
-{% if username == "Shun" %}
-<h1>自分です。</h1>
-{% elif username %}
-<h1>{{ username }}さん、ようこそ！Shunのホームページです。</h1>
-{% else %}
-<h1>匿名ユーザーさん、ようこそ！Shunのホームページです。</h1>
-{% endif %}
-<img src="{% static 'welcome.jpg' %}" />
-{% endblock %}
+    {% block main %}
+    <br>
+    <br>
+    <h1 id="topics">夜蘭占い</h1>
+    <h2>ステータスを入力</h2>
+    <p>※LV90時に限ります</p>
+    <form method="post">
+        {% csrf_token %}
+        {{form.as_p}}
+        <input type="submit" value="占う" class="btn btn-info" />
+    </form>
+    <br>
+        <br>
+    <h2>結果表示</h2>
+    {% if testnum == 3 %}
+    <img src="{% static ''|add:filenamec %}" />
+    {% endif %}
+    {% endblock %}

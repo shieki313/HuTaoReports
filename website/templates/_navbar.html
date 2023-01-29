@@ -1,4 +1,14 @@
-        <div class="navbar">
-            <a href="{% url 'index' %}">ホーム</a>
-            <a href="{% url 'about' %}">アバウト</a>
-        </div>
+{% load static %}
+<div id="header">
+    <p class="sitename">
+        <img src="{% static 'logo.png' %}" width="100" height="100"/>
+        使役の占い
+    </p>
+    <br>
+        <p>占うキャラクターを選択</p>
+        <a href="/">夜蘭</a>
+        <a href="/HuTao/">胡桃</a>
+        <a href="/Albedo/">アルベド</a>
+        <a href="/Arataki/">荒瀧一斗</a>
+        <a href="/general/">汎用型</a>
+</div>
