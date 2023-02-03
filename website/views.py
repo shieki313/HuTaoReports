@@ -1,6 +1,11 @@
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 from . import forms
+from django.shortcuts import render
+from django.views import View
+from .forms import ProcessImageForm
+from PIL import Image, ImageOps
+import io
 
 
 class IndexView(FormView):
@@ -32,3 +37,25 @@ class AboutView(TemplateView):
         ]
         ctxt["num_services"] = 1234567
         return ctxt
+
+class ProcessImageView(View):
+    form_class = ProcessImageForm
+    template_name = 'process_image.html'
+
+    def get(self, request):
+        image = Image.open('website/static/logo.png')
+        buffer = io.BytesIO()
+        image.save(fp=buffer, format=image.format)
+        # image.show()
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        image = Image.open('website/static/logo.png')
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            image = Image.open(image.image.path)
+            image = ImageOps.adjust_brightness(image, form.cleaned_data['brightness'])
+            image = ImageOps.adjust_contrast(image, form.cleaned_data['contrast'])
+            return render(request, 'processed_image.html', {'image': image})
+        return render(request, self.template_name, {'form': form})

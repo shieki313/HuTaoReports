@@ -10,3 +10,7 @@ class StatusForm(forms.Form):
     HP = forms.IntegerField(label="HP")
     Cr = forms.FloatField(label="会心率")
     Cd = forms.FloatField(label="会心ダメージ")
+
+class ProcessImageForm(forms.Form):
+    brightness = forms.FloatField()
+    contrast = forms.FloatField()
