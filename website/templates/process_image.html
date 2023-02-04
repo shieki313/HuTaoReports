@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
     {% block main %}
+    <form method="post">
         {% csrf_token %}
         {{form.as_p}}
     <input type="submit" value="占う" class="btn btn-info" />
-    <img src="{{ image.url }}" alt="{{ image.name }}">
+    </form>
+    <img src="{{ image }}" alt="{{ image.name }}">
 {% endblock %}

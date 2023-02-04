@@ -51,11 +51,13 @@ class ProcessImageView(View):
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        image = Image.open('website/static/logo.png')
+        image = Image.open('media/img/reportA4.png')
+        buffer = io.BytesIO()
+        image.save(fp=buffer, format=image.format)
         form = self.form_class(request.POST)
         if form.is_valid():
-            image = Image.open(image.image.path)
-            image = ImageOps.adjust_brightness(image, form.cleaned_data['brightness'])
-            image = ImageOps.adjust_contrast(image, form.cleaned_data['contrast'])
-            return render(request, 'processed_image.html', {'image': image})
+            # image = Image.open(image.image.path)
+            # image = ImageOps.adjust_brightness(image, form.cleaned_data['brightness'])
+            # image = ImageOps.adjust_contrast(image, form.cleaned_data['contrast'])
+            return render(request, self.template_name, {'image': '/media/img/reportA4.png'})
         return render(request, self.template_name, {'form': form})
