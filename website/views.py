@@ -43,10 +43,6 @@ class ProcessImageView(View):
     template_name = 'process_image.html'
 
     def get(self, request):
-        image = Image.open('website/static/logo.png')
-        buffer = io.BytesIO()
-        image.save(fp=buffer, format=image.format)
-        # image.show()
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
 
