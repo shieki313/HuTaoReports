@@ -12,5 +12,4 @@ class StatusForm(forms.Form):
     Cd = forms.FloatField(label="会心ダメージ")
 
 class ProcessImageForm(forms.Form):
-    brightness = forms.FloatField()
-    contrast = forms.FloatField()
+    brightness = forms.IntegerField()
