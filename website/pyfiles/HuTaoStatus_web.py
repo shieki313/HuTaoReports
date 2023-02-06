@@ -1,14 +1,19 @@
 import asyncio
 
-from enkanetwork import EnkaNetworkAPI
-from enkanetwork import EquipmentsType, DigitType
-import CalcHuTao_web
+from .enkanetwork2 import EnkaNetworkAPI
+from .enkanetwork2 import EquipmentsType, DigitType
+from .CalcHuTao_web import Status
 import numpy as np
 from collections import Counter
-import CardMakerA4
+from .CardMakerA4_web import CardMake
 import datetime
+from .HuTaoPlotEnka import Status as enkaStatus
 
 client = EnkaNetworkAPI(lang="jp")
+
+baseimg_page1 = 'media/img/reportA4.png'
+baseimg_page2 = 'media/img/reportA4.png'
+signature = 'media/img/往生堂印.png'
 
 async def main(UID):
     async with client:
@@ -17,7 +22,6 @@ async def main(UID):
         for character in data.characters:
             if character.id != 10000046:
                 break
-            print(f"=== Stats of {character.name} ===")
             """
             for stat in character.stats:
                 print(f"- {stat[1].id} {stat[0]}: {stat[1].to_rounded() if isinstance(stat[1], Stats) else stat[1].to_percentage_symbol()}")
@@ -26,14 +30,13 @@ async def main(UID):
             Baselist = [character.stats.BASE_HP.value, character.stats.FIGHT_PROP_BASE_ATTACK.value, character.stats.FIGHT_PROP_BASE_DEFENSE.value, 0.0]
             Pluslist = [character.stats.FIGHT_PROP_HP.value, character.stats.FIGHT_PROP_HP_PERCENT.value, character.stats.FIGHT_PROP_ATTACK.value, character.stats.FIGHT_PROP_ATTACK_PERCENT.value,
                         character.stats.FIGHT_PROP_DEFENSE.value, character.stats.FIGHT_PROP_DEFENSE_PERCENT.value, character.stats.FIGHT_PROP_CRITICAL.value, character.stats.FIGHT_PROP_CRITICAL_HURT.value,
-                        character.stats.FIGHT_PROP_ELEMENT_MASTERY.value, character.stats.FIGHT_PROP_CHARGE_EFFICIENCY.value, character.stats.FIGHT_PROP_FIRE_ADD_HURT.value]
-
+                        character.stats.FIGHT_PROP_ELEMENT_MASTERY.value, character.stats.FIGHT_PROP_CHARGE_EFFICIENCY.value, character.stats.FIGHT_PROP_FIRE_ADD_HURT.value+0.33]
+            # スキルによる炎元素ダメージアップを補正
             Num_C = character.constellations_unlocked
             skillLVs = [character.skills[0].level, character.skills[1].level, character.skills[2].level]
 
             weapon = character.equipments[-1]
             Num_R = weapon.refinement
-
             # [HP, HPper, ATK, ATKper, DEF, DEFper, Cr, Cd, Em, Er, EmBuff]
             # artifactstatus = [FIGHT_PROP_HP, FIGHT_PROP_HP_PERCENT, FIGHT_PROP_ATTACK, FIGHT_PROP_ATTACK_PERCENT, FIGHT_PROP_DEFENSE, FIGHT_PROP_DEFENSE_PERCENT, FIGHT_PROP_CRITICAL, FIGHT_PROP_CRITICAL_HURT, FIGHT_PROP_ELEMENT_MASTERY, FIGHT_PROP_CHARGE_EFFICIENCY, FIGHT_PROP_FIRE_ADD_HURT]
             artifact_substatus = {'FIGHT_PROP_HP': 0.0, 'FIGHT_PROP_HP_PERCENT': 0.0, 'FIGHT_PROP_ATTACK': 0.0,
@@ -78,6 +81,8 @@ async def main(UID):
             for item, count in count1.items():
                 if count > 3 and item == "燃え盛る炎の魔女":
                     CW4 = True
+                    Pluslist[10] += 0.075  # 炎バフを補正
+
 
             artifact_setname = ""
             for item, count in count1.items():
@@ -85,6 +90,7 @@ async def main(UID):
                     artifact_setname += item + ' 4セット' + '\n'
                 elif count > 1:
                     artifact_setname += item + ' 2セット' + '\n'
+
 
             substate_data = artifact_substatus.values()
             mainstate_data = artifact_mainstatus.values()
@@ -104,7 +110,7 @@ async def main(UID):
                                    'FIGHT_PROP_FIRE_ADD_HURT': 0.466}
             mainstatus_ideal_HP_data = artifact_mainstatus_ideal_HP.values()
             mainstatus_ideal_EM_data = artifact_mainstatus_ideal_EM.values()
-            x = CalcHuTao_web.Status(Baselist, Pluslist, skillLVs, Num_C, [weapon.id, Num_R], [CW4])
+            x = Status(Baselist, Pluslist, skillLVs, Num_C, [weapon.id, Num_R], [CW4])
             l = np.array(Pluslist) - np.array(list(substate_data))
             l_HP = np.array(Pluslist) - np.array(list(substate_data)) - np.array(list(mainstate_data)) + np.array(list(mainstatus_ideal_HP_data))
             l_EM = np.array(Pluslist) - np.array(list(substate_data)) - np.array(list(mainstate_data)) + np.array(list(mainstatus_ideal_EM_data))
@@ -117,7 +123,7 @@ async def main(UID):
             scoreEm = (np.array(list(substate_data))[6]*2 + np.array(list(substate_data))[7])*100 + np.array(list(substate_data))[8]/4
             scores = [score, scoreHP, scoreEm]
 
-            card = CardMakerA4.CardMake('img/reportA4.png')
+            card = CardMake(baseimg_page1)
 
             # カード作製
             i = 0
@@ -152,22 +158,68 @@ async def main(UID):
             card.text(str(character.skills[0].level), [100, 307+30*2])
             card.text(str(character.skills[1].level), [100, 307+30*3])
             card.text(str(character.skills[2].level), [100, 307+30*4])
-            # print(f"凸数: C{character.constellations_unlocked}")
 
             card.text('Name : ' + data.player.nickname, [23, 80], 16)
             card.text('UID : ' + str(UID), [23, 100], 16)
 
+            # グラフ作製
+            graph = enkaStatus()
+            img = graph.HPGraph(*x.status_forGraph, "a")
+            card.printimg_pil(img, [470, 465],  [int(i) for i in [640/2.8, 480/2.8]])
+            img2 = graph.EmGraph(*x.status_forGraph, x.Em, CW4, 0.82, "a")
+            card.printimg_pil(img2, [470, 670],  [int(i) for i in [640/2.8, 480/2.8]])
 
             # 発行日記入
             dt_now = datetime.datetime.now()
-            print(dt_now.strftime('%Y年%m月%d日'))
             card.text('発行日 : ' + dt_now.strftime('%Y年%m月%d日'), [565, 8], 12)
 
             # 印字
-            card.printimg('img/往生堂印.png', [620, 66], [100, 100])
+            card.printimg(signature, [620, 66], [100, 100])
 
-            card.img.save("img/"+str(UID)+'.png')
+            # card.showimg()
+            # card.img.save("media/img/"+str(UID)+'.png')
 
+            # 往生夜行指標(HP+25%, 元素熟知+120, 夜蘭のダメージバフ, 耐性ダウン)
+            DHHT = {'FIGHT_PROP_HP': 0.0, 'FIGHT_PROP_HP_PERCENT': 0.25, 'FIGHT_PROP_ATTACK': 0.0,
+                                   'FIGHT_PROP_ATTACK_PERCENT': 0.0, 'FIGHT_PROP_DEFENSE': 0.0,
+                                   'FIGHT_PROP_DEFENSE_PERCENT'
+                                   : 0.0, 'FIGHT_PROP_CRITICAL': 0.0, 'FIGHT_PROP_CRITICAL_HURT': 0.0,
+                                   'FIGHT_PROP_ELEMENT_MASTERY': 120.0, 'FIGHT_PROP_CHARGE_EFFICIENCY': 0.0,
+                                   'FIGHT_PROP_FIRE_ADD_HURT': 0.275}
+            modifiedPluslist = np.array(Pluslist) + np.array(list(DHHT.values()))
+            DHHTx = Status(Baselist, modifiedPluslist, skillLVs, Num_C, [weapon.id, Num_R], [CW4])
+            l_DHHT = np.array(modifiedPluslist) - np.array(list(substate_data))
+            l_HP_DHHT = np.array(modifiedPluslist) - np.array(list(substate_data)) - np.array(list(mainstate_data)) + np.array(list(mainstatus_ideal_HP_data))
+            l_EM_DHHT = np.array(modifiedPluslist) - np.array(list(substate_data)) - np.array(list(mainstate_data)) + np.array(list(mainstatus_ideal_EM_data))
+            DHHTx.idealScore(DHHTx.DamageIndicator, l_DHHT)
+            scoreideal_HP_DHHT = DHHTx.idealScore(DHHTx.DamageIndicator, l_HP_DHHT)
+            scoreideal_EM_DHHT = DHHTx.idealScore(DHHTx.DamageIndicator, l_EM_DHHT)
 
-asyncio.run(main(824237286))
+            score_DHHT = min([scoreideal_HP_DHHT, scoreideal_EM_DHHT])
+            scores_DHHT = [score_DHHT, scoreHP, scoreEm]
+
+            # グラフの作製
+            card2 = CardMake(baseimg_page2)
+            img = graph.HPGraph(*DHHTx.status_forGraph, "a")
+            card2.printimg_pil(img, [470, 465],  [int(i) for i in [640/2.8, 480/2.8]])
+            img2 = graph.EmGraph(*DHHTx.status_forGraph, DHHTx.Em, CW4, 0.82, "a")
+            card2.printimg_pil(img2, [470, 670],  [int(i) for i in [640/2.8, 480/2.8]])
+            # ダメージ表示
+            for indexY, dicts in enumerate(x.DMGsDict):
+                for indexX, damage in enumerate(list(dicts.values())):
+                    if type(damage) is np.float64:
+                        damage = (round(damage, 1))
+                    card2.text(str(damage), [100 + indexX*75, 107 + 30 * indexY], anchor='ra')
+            # ダメージ表示(往生夜行)
+            for indexY, dicts in enumerate(DHHTx.DMGsDict):
+                for indexX, damage in enumerate(list(dicts.values())):
+                    if type(damage) is np.float64:
+                        damage = (round(damage, 1))
+                    card2.text(str(damage), [100 + indexX*75, 507 + 30 * indexY], anchor='ra')
+            # VV指標(元素熟知+120, 耐性ダウン, 万葉のダメージバフ)
+            # card2.showimg()
+    return card.img
+
+# img = asyncio.run(main(815487724))
+# img.show()
         # 815487724　824237286 843715177 813771318

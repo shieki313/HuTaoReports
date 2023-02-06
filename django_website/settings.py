@@ -125,5 +125,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-MEDIA_ROOT = 'media/' #ディレクトリuploadsが生成され、この中に画像が保存される
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/') #ディレクトリuploadsが生成され、この中に画像が保存される
 MEDIA_URL = '/media/' #uploadsフォルダのURL　/media/{image名}でアクセス可能

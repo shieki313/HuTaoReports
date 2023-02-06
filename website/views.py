@@ -5,7 +5,9 @@ from django.shortcuts import render
 from django.views import View
 from .forms import ProcessImageForm
 from PIL import Image, ImageOps
+from .pyfiles import HuTaoStatus_web
 import io
+import asyncio
 
 
 class IndexView(FormView):
@@ -52,10 +54,15 @@ class ProcessImageView(View):
         form = self.form_class(request.POST)
         if form.is_valid():
             a = str(form.cleaned_data['brightness'])
-            filepath = 'media/img/' + a + '.png'
-            image.save(filepath, format=image.format)
+            filepath = 'media/img/file' + a + '.png'
             # image = Image.open(image.image.path)
             # image = ImageOps.adjust_brightness(image, form.cleaned_data['brightness'])
             # image = ImageOps.adjust_contrast(image, form.cleaned_data['contrast'])
-            return render(request, self.template_name, {'image': '/' + filepath})
+            filepath_src = '/' + filepath
+
+            img = asyncio.run(HuTaoStatus_web.main(a))
+            img.save(filepath, format=image.format)
+            # 815487724　824237286 843715177 813771318
+            print(filepath_src)
+            return render(request, self.template_name, {'image': filepath_src})
         return render(request, self.template_name, {'form': form})
