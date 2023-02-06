@@ -1,0 +1,10 @@
+__pycache__
+enkanetwork.egg-info
+build
+enkanetwork.py.egg-info
+dist
+test/*.test.py
+.pytest_cache
+.idea
+git-story_media
+env

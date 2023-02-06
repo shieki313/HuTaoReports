@@ -45,7 +45,8 @@ from .exception import (
     UIDNotFounded,
     HTTPException,
     Forbidden,
-    EnkaServerError
+    EnkaServerError,
+    EnkaServerMaintanance
 )
 
 if TYPE_CHECKING:
@@ -117,6 +118,8 @@ class HTTPClient:
         for tries in range(RETRY_MAX):
             try:
                 async with self.__session.request(method, url, **kwargs) as response:
+
+                    _host = response.host
                     if 300 > response.status >= 200:
                         data = await utils.to_data(response)
 
@@ -126,13 +129,18 @@ class HTTPClient:
                         self.LOGGER.debug('%s %s has received %s', method, url, data)
                         return data
 
-                    if response.status == 500:
-                        raise UIDNotFounded(f"UID {uid} not found or Genshin server broken.")
+                    
+                    if _host == "enka.network":
+                        if response.status == 500:
+                            raise UIDNotFounded(f"UID {uid} not found or Genshin server broken.")
 
+                        if response.status == 424:
+                            raise EnkaServerMaintanance("Enka.Network doing maintenance server. Please wait took 5-8 hours or 1 day")
+                        
                     # we are being rate limited
                     # if response.status == 429:
                     # Banned by Cloudflare more than likely.
-
+                    
                     if response.status >= 400:
                         self.LOGGER.warning(f"Failure to fetch {url} ({response.status}) Retry {tries} / {RETRY_MAX}")
                         if tries > RETRY_MAX:
@@ -166,7 +174,7 @@ class HTTPClient:
             raise VaildateUIDError("Validate UID failed. Please check your UID.")
         r = Route(
             'GET',
-            f'/u/{uid}/__data.json' + (f"?key={self.__key}" if self.__key else ""),
+            f'/api/uid/{uid}' + (f"?key={self.__key}" if self.__key else ""),
             endpoint='enka',
             uid=uid
         )

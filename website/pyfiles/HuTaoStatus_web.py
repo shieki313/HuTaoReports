@@ -220,6 +220,6 @@ async def main(UID):
             # card2.showimg()
     return card.img
 
-# img = asyncio.run(main(815487724))
-# img.show()
+img = asyncio.run(main(815487724))
+img.show()
         # 815487724　824237286 843715177 813771318
